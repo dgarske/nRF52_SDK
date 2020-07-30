@@ -78,6 +78,7 @@ static const char menu1[] = "\n"
     "\tt. WolfCrypt Test\n"
     "\tb. WolfCrypt Benchmark\n";
 
+/* Note: Section to Test for SECP256R1 vs SECP224R1 */
 #ifndef NO_ECC256
     #define USE_ECC_CURVE    ECC_SECP256R1
     #define USE_ECC_CURVE_SZ 32

@@ -17,6 +17,10 @@ Example Settings for PCA10040 with the following algorithms:
 extern "C" {
 #endif
 
+/* Enable this to enhance performance - will increase code size */
+/* 0=None (36,708), 1=Some (37,924), 2=All (57,544) */
+#define BUILD_FOR_PERF 0
+
 /* ------------------------------------------------------------------------- */
 /* Platform */
 /* ------------------------------------------------------------------------- */
@@ -40,14 +44,18 @@ extern "C" {
 /* ------------------------------------------------------------------------- */
 #define USE_FAST_MATH
 #define TFM_TIMING_RESISTANT
-#define TFM_ARM /* Assembly optimization */
+#if BUILD_FOR_PERF >= 1
+    #define TFM_ARM /* Assembly optimization */
+#endif
 
 /* Wolf Single Precision Math */
-#define WOLFSSL_SP
-#define WOLFSSL_SP_SMALL /* use smaller version of code */
-#define WOLFSSL_HAVE_SP_ECC
-#define WOLFSSL_SP_ASM
-#define WOLFSSL_SP_ARM_CORTEX_M_ASM /* Assembly optimization */
+#if BUILD_FOR_PERF >= 2
+    #define WOLFSSL_SP
+    #define WOLFSSL_SP_SMALL /* use smaller version of code */
+    #define WOLFSSL_HAVE_SP_ECC
+    #define WOLFSSL_SP_ASM
+    #define WOLFSSL_SP_ARM_CORTEX_M_ASM /* Assembly optimization */
+#endif
 
 
 /* ------------------------------------------------------------------------- */
@@ -68,7 +76,9 @@ extern "C" {
 
 /* Optional ECC calculation method */
 /* Note: doubles heap usage, but slightly faster */
-#define ECC_SHAMIR
+#if BUILD_FOR_PERF >= 1
+    #define ECC_SHAMIR
+#endif
 
 /* Reduces heap usage, but slower */
 #define ECC_TIMING_RESISTANT
@@ -78,9 +88,13 @@ extern "C" {
 #define FP_MAX_BITS (256 * 2)
 
 /* Speedups specific to curve */
-#ifdef HAVE_ECC224
-    #undef  TFM_ECC224
-    #define TFM_ECC224
+#if BUILD_FOR_PERF >= 2
+    #ifndef NO_ECC256
+        #define TFM_ECC256
+    #endif
+    #ifdef HAVE_ECC224
+        #define TFM_ECC224
+    #endif
 #endif
 
 /* AES */
@@ -88,11 +102,17 @@ extern "C" {
 #define AES_MAX_KEY_SIZE 128
 
 /* GCM Method: None, GCM_SMALL, GCM_WORD32 or GCM_TABLE */
-#define GCM_TABLE
+#if BUILD_FOR_PERF >= 2
+    #define GCM_TABLE
+#else
+    #define GCM_SMALL
+#endif
 
 /* Sha256 - On by default */
-/* Optional size reduction (not unrolled - ~2k smaller and ~25% slower) */
-//#define USE_SLOW_SHA256
+#if BUILD_FOR_PERF == 0
+    /* Optional size reduction (not unrolled - ~2k smaller and ~25% slower) */
+    #define USE_SLOW_SHA256
+#endif
 
 /* X963 KDF */
 #define HAVE_X963_KDF
@@ -162,7 +182,9 @@ extern "C" {
 /* Enable Features */
 /* ------------------------------------------------------------------------- */
 //#define WOLFSSL_BASE64_ENCODE
-//#define WOLFSSL_VALIDATE_ECC_IMPORT /* Validate import */
+#define WOLFSSL_VALIDATE_ECC_IMPORT /* Validate import */
+#define WOLFSSL_VALIDATE_ECC_KEYGEN /* Validate ECC key gen */
+#define WOLFSSL_PUBLIC_ECC_ADD_DBL /* Export ECC point functions */
 //#define HAVE_COMP_KEY /* ECC Compressed Key Support */
 
 
@@ -201,6 +223,7 @@ extern "C" {
 #define NO_ASN_TIME
 
 #define NO_CRYPT_TEST
+/* Note: Enabling "-flto" in Makefile causes RTC init issue */
 #define NO_CRYPT_BENCHMARK
 //#define NO_CERTS
 //#define NO_INLINE
